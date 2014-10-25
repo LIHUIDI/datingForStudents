@@ -69,21 +69,68 @@ sub main_control(){
 	if(param('set')){
 		print set10();
 	}
-	if(param('username') && param('password') && !param('set')){ 
-		print p(
-					{
-						-class=>'Tip'
-					},
-					"Hi, ", param('username'), " Welcome!"
-				),
-			br, "\n";
-		print set10();
-	}
-
-	print page_footer();
+	if(param('username') && param('password') && !param('set')){
+		$authentication = 0;
+		$authenticate_user = 0;
+		$username = param('username');
+		$password = param('password');
+		authen_page(\$authentication,\$authenticate_user,\$username,\$password);
+		if($authentication){
+				print p(
+						{
+							-class=>'Tip'
+						},
+						"Hi, ", param('username'), " Welcome!"
+					),
+				br, "\n";
+				print set10();
+			}
+		}
+		print page_footer();
+		
 	exit 0;
 }
-	
+
+sub authen_page{
+	my (my $authentication, my $authenticate_user,my $username, my $password) = @_;
+	my @students = glob("$students_dir/*");
+	foreach my $student(@students){
+		my ($dot,$dir,my $user) = split /\//,$student;
+		if ($$username eq $user) {
+			$$authenticate_user = 1;
+			open F,"< $student/profile.txt" or die;
+			while(my $line = <F>){
+				chomp $line;
+				if($line eq "password:"){
+					while($line = <F>){
+						chomp $line;
+						if($line =~ /^\s/){
+							$line =~ s/^\s*//;
+							if($line eq $$password){
+								$$authentication = 1;
+							}
+						}
+					}
+					if($$authentication == 0){
+						print
+						start_html,
+						p({-class=>'Tip'},
+						"Wrong password!"),
+						,
+						end_html;
+					}
+				}
+			}
+			close F;
+		}
+	}
+	if($$authenticate_user == 0){print
+						start_html,
+						p({-class=>'Tip'},
+						"User doesn't exist!"),
+						end_html;}
+}
+
 sub login_page{
 	return p,
 		start_form(-class=>'Tip',
