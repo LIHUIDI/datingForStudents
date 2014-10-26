@@ -59,8 +59,11 @@ print main_control();
 sub main_control(){
 	# print start of HTML ASAP to assist debugging if there is an error in the script
 	print page_header();
-	if(!param()){
-		print login_page();
+	if(!param() || defined param('logout')){
+		$login = param('logout') || 0;
+		if($login == 0){
+			print login_page();
+		}
 	}
 	if($ENV{'QUERY_STRING'} =~ /\d+/){
 		my $q = $ENV{'QUERY_STRING'};
@@ -68,6 +71,7 @@ sub main_control(){
 	}
 	if(param('set')){
 		print set10();
+		
 	}
 	if(param('username') && param('password') && !param('set')){
 		$authentication = 0;
@@ -76,18 +80,22 @@ sub main_control(){
 		$password = param('password');
 		authen_page(\$authentication,\$authenticate_user,\$username,\$password);
 		if($authentication){
-				print p(
-						{
-							-class=>'Tip'
-						},
-						"Hi, ", param('username'), " Welcome!"
-					),
-				br, "\n";
-				print set10();
-			}
+			print p(
+					{
+						-class=>'Tip'
+					},
+					"Hi, ", param('username'), " Welcome!"
+				), "\n";
+			print set10();
+			$login += 1;
+			print start_form(-method=>'post'),
+			hidden('logout',$login-1),
+			submit("logout"),
+			end_form;
 		}
-		print page_footer();
-		
+	}
+	
+	print page_footer();
 	exit 0;
 }
 
@@ -145,7 +153,7 @@ sub login_page{
 		password_field(-name=>'password',-size=>'15'), br, "\n",
 		
 		submit(-value=>'login'), br, "\n",
-		
+		p,"\n",
 		"New User", br, "\n",
 		submit(-value=>'register'),"\n",
 		
@@ -191,19 +199,21 @@ sub set10 {
 		close $p;
 		$mini_profile{$j} = $profile;
 	}
-	return
-	
-		p(
+	return p(
 			{
 				-class=>'Tip'
 			},
 			"Eveyday, find your loved one."
-		),
+		),"\n",
 		start_form(-class=>'Tip',
 			-method=>'post',
 			-action=>''
 		), "\n",
 		
+		p("Searching, if you know someone's username"),
+		textfield(-name=>'string_user', -size=>'15',-maxlength=>'20'),"\n",
+		submit("Search"),"\n",
+		p,
 		table({-border=>"1", -width=>'100%'},
 		map{
 			Tr(
