@@ -69,9 +69,8 @@ sub main_control(){
 		my $q = $ENV{'QUERY_STRING'};
 		print detail($q);
 	}
-	if(param('set')){
+	if(param('set') && !defined param('string_user')){
 		print set10();
-		
 	}
 	if(param('username') && param('password') && !param('set')){
 		$authentication = 0;
@@ -95,8 +94,107 @@ sub main_control(){
 		}
 	}
 	
+	if(defined param('string_user') || defined param('sets')){
+		
+		my $search_user = param('string_user');
+		 $search_user =~ s/\W//g;
+		my @users;
+		my @students = glob("$students_dir/*");
+		foreach my $student(@students){
+			my (my $dot, my $dir,my $user) = split /\//,$student;
+			
+			if ($user =~ m/($search_user)/) {
+				push(@users, $user);
+			}
+		}
+		
+		print search_user_page(\@users,$search_user);
+	}
+	
 	print page_footer();
 	exit 0;
+}
+
+sub search_user_page{
+	my @students = @{$_[0]};
+	my $userstring = $_[1];
+	my $sets = param('sets') || 0;
+	$sets = min(max($sets, 0), $#students);
+	param('sets', $sets + 10);
+	
+	foreach my $j ($sets..$sets+9){
+		if($students[$j]){
+			my $student_to_show  = $students[$j];
+			
+			my $profile_filename = "$students_dir/$student_to_show/profile.txt";
+			open my $p, "$profile_filename" or die "can not open $profile_filename: $!";
+			my $profile = ""; my @lines = <$p>;
+			foreach my $i (0..$#lines){
+				my $line = $lines[$i];
+				chomp $line;		
+				if($lines[$i] =~ /(\bpassword\b|\bname\b|\bemail\b|\bfavourite_movies\b|\bfavourite_books\b|\bfavourite_bands\b|\bfavourite_TV_shows\b|\bfavourite_hobbies\b|\bhair_colour\b|\bdegree\b)/){
+			
+					while($lines[$i+1]){
+						if($lines[$i+1] =~ /^[^\s]/){
+							last;
+						}else{				
+							$lines[$i+1] =~ s/^.*$//;
+						}
+						$i = $i+1;
+					}
+					$lines[$i] =~ s/^.*$//; next;
+				}
+		
+				if($line =~ /\bcourses\b/) {next;}
+				if($line =~ /\b[A-Z]{4}\d{4}\b/) {next;}
+				if($line eq ""){next;}
+				$profile .= "$line\n";
+			}
+			close $p;
+			$mini_profile{$j} = $profile;
+		}
+	}
+	return p(
+			{
+				-class=>'Tip'
+			},
+			"Here are your search results."
+		),"\n",
+		start_form(-class=>'Tip',
+			-method=>'post',
+			-action=>''
+		), "\n",
+		table({-border=>"1", -width=>'100%'},
+		map{
+			Tr(
+					td({-width=>'30%',-align=>'center',-bgcolor=>'FFFF99'},
+						img(
+							{
+								-src=>'./image.cgi?'.$_, 
+								-alt=>"student's profile image"
+							}
+						),
+						a({href=>'./love2041.cgi?'.$_},"I want to see more"),
+				
+					),
+					td({-width=>'50%',-align=>'left',-bgcolor=>'white'},
+					
+						pre(
+							{
+								-class=>'Tip'
+							},
+							$mini_profile{$_}
+						)
+						
+					)
+			   )
+			} sort keys %mini_profile
+		),
+		hidden('string_user',$userstring),
+		hidden('sets', $sets + 10),"\n",
+		submit('Next set of search results'),"\n",
+		end_form, "\n",
+		p, "\n";
 }
 
 sub authen_page{
@@ -210,9 +308,11 @@ sub set10 {
 			-action=>''
 		), "\n",
 		
+		# search usename interface.
 		p("Searching, if you know someone's username"),
 		textfield(-name=>'string_user', -size=>'15',-maxlength=>'20'),"\n",
 		submit("Search"),"\n",
+		
 		p,
 		table({-border=>"1", -width=>'100%'},
 		map{
