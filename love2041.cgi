@@ -65,11 +65,11 @@ sub main_control(){
 			print login_page();
 		}
 	}
-	if($ENV{'QUERY_STRING'} =~ /\d+/){
+	if($ENV{'QUERY_STRING'} =~ /\w+/){
 		my $q = $ENV{'QUERY_STRING'};
 		print detail($q);
 	}
-	if(param('set') && !defined param('string_user')){
+	if(param('set') && param('string_user') eq ""){
 		print set10();
 	}
 	if(param('username') && param('password') && !param('set')){
@@ -94,7 +94,7 @@ sub main_control(){
 		}
 	}
 	
-	if(defined param('string_user') || defined param('sets')){
+	if(param('string_user') || defined param('sets')){
 		
 		my $search_user = param('string_user');
 		 $search_user =~ s/\W//g;
@@ -151,7 +151,7 @@ sub search_user_page{
 				$profile .= "$line\n";
 			}
 			close $p;
-			$mini_profile{$j} = $profile;
+			$mini_profile{$student_to_show} = $profile;
 		}
 	}
 	return p(
@@ -264,12 +264,14 @@ sub set10 {
 	my $set = param('set') || 0;
 	my @students = glob("$students_dir/*");
 	$set = min(max($set, 0), $#students);
-	
 	param('set', $set + 10);
-	
+	foreach my $stu_path(@students){
+		$stu_path =~ s/\.\/students\///;
+		push(@student_name, $stu_path);
+	}
 	foreach $j ($set..$set+9){
-		my $student_to_show  = $students[$j];
-		my $profile_filename = "$student_to_show/profile.txt";
+		my $student_to_show  = $student_name[$j];
+		my $profile_filename = "$students_dir/$student_to_show/profile.txt";
 		open my $p, "$profile_filename" or die "can not open $profile_filename: $!";
 	
 		$profile = ""; @lines = <$p>;
@@ -295,7 +297,7 @@ sub set10 {
 			$profile .= "$line\n";
 		}
 		close $p;
-		$mini_profile{$j} = $profile;
+		$mini_profile{$student_name[$j]} = $profile;
 	}
 	return p(
 			{
@@ -349,16 +351,10 @@ sub set10 {
 
 sub detail {
 	
-	#my $n = param('n') || 0;
 	$n = shift @_;
 	my @students = glob("$students_dir/*");
-	#$n = min(max($n, 0), $#students);
-	
-	#param('n', $n + 1);
-	
-	my $student_to_show  = $students[$n];
-	
-	my $profile_filename = "$student_to_show/profile.txt";
+	my $student_to_show  = $n;
+	my $profile_filename = "$students_dir/$student_to_show/profile.txt";
 	open my $p, "$profile_filename" or die "can not open $profile_filename: $!";
 	
 	#delete private parts of the profile.
@@ -367,7 +363,6 @@ sub detail {
 	foreach $i (0..$#lines){
 		$line = $lines[$i];
 		chomp $line;
-		#if($lines[$i] =~ /(\bpassword\b|\bname\b|\bemail\b)/){ $lines[$i] =~ s/^.*$//; $lines[$i+1] = s/^.*$//; next;}
 		if($lines[$i] =~ /(\bpassword\b|\bname\b|\bemail\b)/){
 		
 			while($lines[$i+1]){
@@ -426,9 +421,6 @@ sub detail {
 		p, "\n";
 }
 
-#
-# HTML placed at header of every screen
-#
 sub page_header {
 	return header,
    		start_html(
