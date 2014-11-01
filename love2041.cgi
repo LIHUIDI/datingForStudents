@@ -77,7 +77,7 @@ sub main_control(){
 		my $q = $ENV{'QUERY_STRING'};
 		print detail($q);
 	}
-	if(param('set') && param('string_user') eq "" && !param('my preference user')){
+	if(param('set') && param('Next set of students')){
 		print set10();
 	}
 	if(param('username') && param('password') && !param('set')){
@@ -103,7 +103,7 @@ sub main_control(){
 		
 	}
 	
-	if(param('string_user')){
+	if(param('string_user') && !param('my preference user') && !param('Next set of students')){
 		
 		my $search_user = param('string_user');
 		 $search_user =~ s/\W//g;
