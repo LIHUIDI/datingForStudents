@@ -74,7 +74,7 @@ sub main_control(){
 		print matched_profile(\@matched_stu);
 	}
 	
-	if(!param() || param('logout')){
+	if(!param() || defined param('logout')){
 		$login = param('logout') || 0;
 		if($login == 0){
 			print login_page();
@@ -482,7 +482,7 @@ sub choose_matched{
 					}
 					last;
 				}
-				print $student,"'s gender score is ",$score{$student},br;
+				
 			}
 			if($l eq "birthdate:"){
 				while($l = <$f>){
@@ -501,7 +501,7 @@ sub choose_matched{
 					}
 					last;
 				}
-				print $student,"'s age score is ",$score{$student},br;
+				
 			}
 			if($l eq "weight:"){
 				while($l = <$f>){
@@ -521,7 +521,7 @@ sub choose_matched{
 					}
 					last;
 				}
-				print $student,"'s weight score is ",$score{$student},br();
+				
 			}
 			
 			
@@ -539,10 +539,10 @@ sub choose_matched{
 # showing matching data according my preference in the record.
 sub matched_profile{
 	my @matched_profile = @{$_[0]};
-	print @matched_profile;
+	
 	
 	my $matched_sets = param('matched_sets') || 0;
-	print "matched sets is ",$matched_sets;
+	
 	$matched_sets = min(max($matched_sets, 0), $#matched_profile);
 	param('matched_sets', $matched_sets + 10);
 	foreach my $h ($matched_sets..$matched_sets+9){
@@ -552,10 +552,10 @@ sub matched_profile{
 	foreach my $j ($matched_sets..$matched_sets+9){
 		if($matched_profile[$j]){
 			my $student_to_show  = $matched_profile[$j];
-			print $student_to_show,br;
+			
 			my $profile_filename = "$students_dir/$student_to_show/profile.txt";
 			open my $p, "$profile_filename" or die "can not open $profile_filename: $!";
-			print $profile_filename,br;
+			
 			my $profile = ""; my @lines = <$p>;
 			foreach my $i (0..$#lines){
 				my $line = $lines[$i];
