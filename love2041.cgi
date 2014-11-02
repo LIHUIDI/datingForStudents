@@ -25,6 +25,13 @@ $newStyle=<<END;
 			margin-left: 50pt;
 			color: black;
    }
+A.Tip {
+		font-family: "Times New Roman";
+		font-size: 20px;
+		margin-right: 50pt;
+		margin-left: 50pt;
+		color: black;
+  }
 	Pre.Tip2 {
 		font-family: "Times New Roman";
 		font-size: 20px;
@@ -67,7 +74,7 @@ sub main_control(){
 		print matched_profile(\@matched_stu);
 	}
 	
-	if(!param() || defined param('logout')){
+	if(!param() || param('logout')){
 		$login = param('logout') || 0;
 		if($login == 0){
 			print login_page();
@@ -79,6 +86,10 @@ sub main_control(){
 	}
 	if(param('set') && param('Next set of students')){
 		print set10();
+	}
+	if(param('edit_profile') && param('edituser') && !param('logout')){
+		my $edit_user = param('edituser');
+		print edit_page($edit_user);
 	}
 	if(param('username') && param('password') && !param('set')){
 		$authentication = 0;
@@ -96,6 +107,10 @@ sub main_control(){
 			print set10($username);
 			$login += 1;
 			print start_form(-method=>'post'),
+			"If you want to edit profile.   ",
+			hidden('edituser',$username),
+			submit(-name=>'edit_profile', -value=>'Edit my profile'),br,
+			"If you want to logout    ",
 			hidden('logout',$login-1),
 			submit("logout"),
 			end_form;
@@ -119,9 +134,245 @@ sub main_control(){
 		
 		print search_user_page(\@users,$search_user);
 	}
+	if(param('register')){
+		print register_page();
+	}
 	
+	if(param('macroblog') && param('writewho')){
+		my$p = param('macroblog');
+		my $who = param('writewho');
+		if( param('profile_text')){
+			open $fh, ">> $students_dir/$who/profile.txt" or die"can not open: $!";
+			print $fh "\n","my description:\n","	",$p;
+			return p({
+					-class=>'Tip'
+				},"Your supplied text has added to your profile succesfully"),
+			a({-class=>'Tip',href=>'./love2041.cgi?'.$who},"I want to see my profile");
+		}
+		if(param('photo') && param('uploaded_photo')){
+			my $filename = param('photo');
+			
+			my $upload_filehandle = upload('photo');
+			open UPLOADFILE, "> $students_dir/$who/$filename";
+			binmode UPLOADFILE;
+			while (<$upload_filehandle>) 
+			 { 
+			   print UPLOADFILE; 
+			 } 
+			 close UPLOADFILE;
+			 return  p({
+					-class=>'Tip'
+				},"Your supplied photo has added succesfully");
+		}
+		if(param('edit_my_pre')){
+			
+			if(param('newagemin') || param('newagemax')){
+				my $newagemin = param('newagemin');
+				my $newagemax = param('newagemax');
+				open $my_pre, "+< $students_dir/$who/preferences.txt" or die;
+				$out = '';
+				while(my $lines = <$my_pre>){
+					if($lines =~ "age:"){
+						$out .= $lines;
+						if($lines = <$my_pre>){
+							if($lines =~ "min:"){
+								$out .= $lines;
+								$lines = <$my_pre>;
+								$lines =~ s/\d+/$newagemin/;
+								$out .= $lines;
+							}
+						}
+						if($lines = <$my_pre>){
+							if($lines =~ "max:"){
+								$out .= $lines;
+								$lines = <$my_pre>;
+								$lines =~ s/\d+/$newagemax/;
+							}
+						}
+						
+					}
+					$out .= $lines;
+				}
+				seek($my_pre, 0, 0)               or die;
+				print $my_pre $out                or die ;
+				truncate($my_pre, tell($my_pre))        or die;
+				close($my_pre)                    or die;
+			}
+			if(param('newweightmin') || param('newweightmax')){
+				my $newweightmin = param('newweightmin');
+				my $newweightmax = param('newweightmax');
+				open $my_pre, "+< $students_dir/$who/preferences.txt" or die;
+				$out = '';
+				while(my $lines = <$my_pre>){
+					if($lines =~ "weight:"){
+						$out .= $lines;
+						if($lines = <$my_pre>){
+							if($lines =~ "min:"){
+								$out .= $lines;
+								$lines = <$my_pre>;
+								$lines =~ s/\d+/$newweightmin/;
+								$out .= $lines;
+							}
+						}
+						if($lines = <$my_pre>){
+							if($lines =~ "max:"){
+								$out .= $lines;
+								$lines = <$my_pre>;
+								$lines =~ s/\d+/$newweightmax/;
+							}
+						}
+						
+					}
+					$out .= $lines;
+				}
+				seek($my_pre, 0, 0)               or die;
+				print $my_pre $out                or die ;
+				truncate($my_pre, tell($my_pre))        or die;
+				close($my_pre)                    or die;
+			}
+			
+			
+			
+			return p({
+					-class=>'Tip'
+				},"Your preference has edited succesfully");
+		}
+		if(param('edit_my_profile')){
+			if(param('newheight')){
+				my $newheight = param('newheight');
+				open $my_profile, "+< $students_dir/$who/profile.txt" or die;
+				$out = '';
+				while(my $lines = <$my_profile>){
+					if($lines =~ "height:"){
+						$out .= $lines;
+						if($lines = <$my_profile>){
+							$lines =~ s/\d+\.\d+/$newheight/;
+						}
+						
+					}
+					$out .= $lines;
+				}
+				seek($my_profile, 0, 0)               or die;
+				print $my_profile $out                or die ;
+				truncate($my_profile, tell($my_profile))        or die;
+				close($my_profile)                    or die;
+			}
+			if(param('newweight')){
+				my $newweight = param('newweight');
+				open $my_profile, "+< $students_dir/$who/profile.txt" or die;
+				$out = '';
+				while(my $lines = <$my_profile>){
+					if($lines =~ "weight:"){
+						$out .= $lines;
+						if($lines = <$my_profile>){
+							$lines =~ s/\d+/$newweight/;
+						}
+						
+					}
+					$out .= $lines;
+				}
+				seek($my_profile, 0, 0)               or die;
+				print $my_profile $out                or die ;
+				truncate($my_profile, tell($my_profile))        or die;
+				close($my_profile)                    or die;
+			}
+			if(param('newhair')){
+				my $newhair = param('newhair');
+				open $my_profile, "+< $students_dir/$who/profile.txt" or die;
+				$out = '';
+				while(my $lines = <$my_profile>){
+					if($lines =~ "hair_colour:"){
+						$out .= $lines;
+						if($lines = <$my_profile>){
+							$lines =~ s/\w+/$newhair/;
+						}
+						
+					}
+					$out .= $lines;
+				}
+				seek($my_profile, 0, 0)               or die;
+				print $my_profile $out                or die ;
+				truncate($my_profile, tell($my_profile))        or die;
+				close($my_profile)                    or die;
+			}
+			
+			return p({
+					-class=>'Tip'
+				},"Your profile has edited succesfully"),
+			a({-class=>'Tip',href=>'./love2041.cgi?'.$who},"I want to see my new profile");
+		}
+	
+	}
 	print page_footer();
 	exit 0;
+}
+
+sub edit_page{
+	my $edituser = shift @_;
+	param('writewho',$edituser);
+	return start_multipart_form(-class=>'Tip',-method=>post),
+	p("You can add to your profile some text, probably describing your interests and desires."),
+	textarea(-name=>'macroblog',-default=>'write something here.',-rows=>10,-cols=>70),br,
+	hidden('writewho',$edituser),
+	submit(-name=>'profile_text',-value=>'submit'),
+	p("You can upload photo"),
+	filefield(-name=>'photo',-default=>'',-size=>50,-maxlenth=>80),
+	submit(-name=>'uploaded_photo',-value=>'ok'),
+	p("You can edit your dating profile, including details, preference or description."),
+	"height:",textfield(-name=>'newheight',-size=>20),br,
+	"weight:",textfield(-name=>'newweight',-size=>20),br,
+	"hair_colour:",textfield(-name=>'newhair',-size=>20),br,
+	"favourite_movies:",textarea(-name=>'newmovie',-size=>30,-maxlenth=>50),br,
+	"gender:",textfield(-name=>'newgender',-size=>20),br,
+	"password:",textfield(-name=>'newpassword',-size=>20),br,
+	
+	"courses:",textarea(-name=>'newmovie',-size=>30,-maxlenth=>50),br,
+	"birthdate:",textfield(-name=>'newpassword',-size=>20,-default=>'year/month/day'),br,
+	"favourite_books:",textarea(-name=>'newbook',-size=>30,-maxlenth=>50),br,
+	"username:",textfield(-name=>'newname',-size=>20),br,
+	"degree:",textfield(-name=>'newdegree',-size=>20),br,
+	"favourite_bands:",textarea(-name=>'newband',-size=>30,-maxlenth=>50),br,
+	"favourite_TV:",textarea(-name=>'newtv',-size=>30,-maxlenth=>50),br,
+	"email:",textfield(-name=>'newemail',-size=>20),br,
+	
+	"favourite_hobbies:",textarea(-name=>'newhb',-size=>30,-maxlenth=>50),br,
+	submit(-name=>'edit_my_profile',-value=>'edit'),
+	
+	#can also update you preference
+	p("You can edit your preference."),
+	"age: min ",textfield(-name=>'newagemin',-size=>20),br,
+	"age: max ",textfield(-name=>'newagemax',-size=>20),br,
+	"weight: min ",textfield(-name=>'newweightmin',-size=>20),br,
+	"weight: max ",textfield(-name=>'newweightmax',-size=>20),br,
+	"favourite_movies:",textarea(-name=>'newmoviepre',-size=>30,-maxlenth=>50),br,
+	"gender:",textfield(-name=>'newgenderpre',-size=>20),br,
+	"password:",textfield(-name=>'newpasswordpre',-size=>20),br,
+	"hair_colour:",textfield(-name=>'newhairpre',-size=>20),br,
+	"courses:",textarea(-name=>'newmoviepre',-size=>30,-maxlenth=>50),br,
+	
+	"favourite_books:",textarea(-name=>'newbookpre',-size=>30,-maxlenth=>50),br,
+	"username:",textfield(-name=>'newnamepre',-size=>20),br,
+	"degree:",textfield(-name=>'newdegreepre',-size=>20),br,
+	"favourite_bands:",textarea(-name=>'newbandpre',-size=>30,-maxlenth=>50),br,
+	"favourite_TV:",textarea(-name=>'newtvpre',-size=>30,-maxlenth=>50),br,
+	"email:",textfield(-name=>'newemailpre',-size=>20),br,
+	"height:",textfield(-name=>'newheightpre',-size=>20),br,
+	"favourite_hobbies:",textarea(-name=>'newhbpre',-size=>30,-maxlenth=>50),br,
+	submit(-name=>'edit_my_pre',-value=>'editpre'),
+	end_form,
+}
+
+sub register_page{
+	return start_form(-class=>'Tip',-method=>post),
+	"username",
+	textfield(-name=>'newusername',-size=>'20'),br,
+	"password",
+	password_field(-name=>'newuserpassword',-size=>'20'),br,
+	"email",
+	textfield(-name=>'newuseremail',-size=>'40'),br,
+	submit(-name=>'registernew',-value=>'submit'),br,
+	p("There should be a link in your registered email address, click it to finish your register."),
+	end_form;
 }
 
 sub choose_matched{
@@ -509,10 +760,10 @@ sub login_page{
 		"Password: ",
 		password_field(-name=>'password',-size=>'15'), br, "\n",
 		
-		submit(-value=>'login'), br, "\n",
+		submit(-name=>'login',-value=>'login'), br, "\n",
 		p,"\n",
 		"New User", br, "\n",
-		submit(-value=>'register'),"\n",
+		submit(-name=>'register', -value=>'register'),br,"\n",
 		
 		end_form;
 		print "<br>\n";
@@ -569,6 +820,7 @@ sub set10 {
 			-method=>'post',
 			-action=>''
 		), "\n",
+		
 		
 		# search usename interface.
 		p("Searching, if you know someone's username"),
