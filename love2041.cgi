@@ -1,8 +1,9 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl -wT
 
-# written by andrewt@cse.unsw.edu.au September 2013
+# original written by andrewt@cse.unsw.edu.au September 2013
 # as a starting point for COMP2041/9041 assignment 2
 # http://cgi.cse.unsw.edu.au/~cs2041/assignments/LOVE2041/
+# modified by LIHUIDI as a fully functional CGI program.
 
 use CGI qw/:all/;
 use CGI qw/:standard :html3/;
